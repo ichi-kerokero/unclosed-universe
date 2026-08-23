@@ -1,0 +1,5 @@
+export type Save={schemaVersion:1;mathRuleSetVersion:'hat-htpf-v1';openedHatIds:string[];undo:string[];camera:{x:number;y:number;zoom:number};audio:{muted:boolean;volume:number}};
+const DB='unclosed-universe',STORE='snapshots',KEY='current';
+const db=()=>new Promise<IDBDatabase>((resolve,reject)=>{const r=indexedDB.open(DB,1);r.onupgradeneeded=()=>r.result.createObjectStore(STORE);r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error)});
+export async function loadSave(){try{const d=await db();return await new Promise<Save|undefined>((resolve,reject)=>{const tx=d.transaction(STORE),r=tx.objectStore(STORE).get(KEY);r.onsuccess=()=>resolve(r.result as Save|undefined);r.onerror=()=>reject(r.error)})}catch{return undefined}}
+export async function save(v:Save){try{const d=await db();await new Promise<void>((resolve,reject)=>{const tx=d.transaction(STORE,'readwrite');tx.objectStore(STORE).put(v,KEY);tx.oncomplete=()=>resolve();tx.onerror=()=>reject(tx.error)})}catch{/* play remains available if storage is blocked */}}

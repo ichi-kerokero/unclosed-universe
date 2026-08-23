@@ -1,0 +1,10 @@
+export class AudioEngine{
+ private ctx?:AudioContext;private bgm?:HTMLAudioElement;private bgmGain?:GainNode;private sfx?:GainNode;private buffers=new Map<string,AudioBuffer>();private loading=new Map<string,Promise<AudioBuffer>>();muted=false;volume=.55;
+ async start(){if(this.ctx){await this.ctx.resume();return}this.ctx=new AudioContext();this.bgmGain=this.ctx.createGain();this.sfx=this.ctx.createGain();this.bgmGain.connect(this.ctx.destination);this.sfx.connect(this.ctx.destination);this.preload(this.asset('audio/hat-snap.m4a'));this.preload(this.asset('audio/hat-appears.wav'));this.bgm=new Audio(this.asset('audio/bgm.mp3'));this.bgm.loop=true;this.bgm.volume=.24*this.volume;await this.bgm.play().catch(()=>{})}
+ private asset(path:string){return`${import.meta.env.BASE_URL}assets/${path}`}
+ set(muted:boolean,volume=this.volume){this.muted=muted;this.volume=volume;if(this.bgm)this.bgm.volume=muted?0:.24*volume;if(this.sfx)this.sfx.gain.value=muted?0:volume}
+ private preload(url:string){if(!this.ctx)return Promise.reject();const cached=this.buffers.get(url);if(cached)return Promise.resolve(cached);const pending=this.loading.get(url);if(pending)return pending;const task=fetch(url).then(r=>r.arrayBuffer()).then(b=>this.ctx!.decodeAudioData(b)).then(buf=>{this.buffers.set(url,buf);this.loading.delete(url);return buf});this.loading.set(url,task);return task}
+ private play(url:string,gain=1){if(!this.ctx||!this.sfx||this.muted)return;const playBuffer=(buf:AudioBuffer)=>{const s=this.ctx!.createBufferSource(),g=this.ctx!.createGain();g.gain.value=gain;s.buffer=buf;s.connect(g);g.connect(this.sfx!);s.start(this.ctx!.currentTime)};const cached=this.buffers.get(url);if(cached)playBuffer(cached);else this.preload(url).then(playBuffer).catch(()=>{})}
+ snap(){if(this.ctx&&this.bgmGain){const t=this.ctx.currentTime;this.bgmGain.gain.cancelScheduledValues(t);this.bgmGain.gain.setValueAtTime(.42,t);this.bgmGain.gain.linearRampToValueAtTime(1,t+.18)}this.play(this.asset('audio/hat-snap.m4a'))}
+ appears(){this.play(this.asset('audio/hat-appears.wav'),.55)}
+}
