@@ -9,7 +9,7 @@ const world=(q:Point)=>({x:(q.x-canvas.clientWidth/2)/cam.zoom+cam.x,y:(q.y-canv
 const path=(poly:Point[])=>{const q=new Path2D();poly.forEach((v,i)=>i?q.lineTo(v.x,v.y):q.moveTo(v.x,v.y));q.closePath();return q};
 const d2=(a:Point,b:Point)=>(a.x-b.x)**2+(a.y-b.y)**2;
 const normAngle=(a:number)=>Math.atan2(Math.sin(a),Math.cos(a));
-const desiredAngle=(h:Hat)=>{const base=engine.hats.get(engine.initialId())!;return normAngle(Math.atan2(h.T[3],h.T[0])-Math.atan2(base.T[3],base.T[0]))};
+const desiredAngle=(h:Hat)=>{const base=engine.hats.get(engine.initialId())!,reflection=h.mirrored!==base.mirrored?Math.PI:0;return normAngle(Math.atan2(h.T[3],h.T[0])-Math.atan2(base.T[3],base.T[0])-reflection)};
 function dragPolygon(){if(!drag)return[];const base=engine.hats.get(engine.initialId())!,c=Math.cos(drag.angle),s=Math.sin(drag.angle),flip=drag.mirrored?-1:1;return base.polygon.map(v=>{const x=(v.x-base.center.x)*flip,y=v.y-base.center.y;return{x:drag!.x+c*x-s*y,y:drag!.y+s*x+c*y}})}
 function inside(q:Point,poly:Point[]){let hit=false;for(let i=0,j=poly.length-1;i<poly.length;j=i++){const a=poly[i],b=poly[j];if((a.y>q.y)!==(b.y>q.y)&&q.x<(b.x-a.x)*(q.y-a.y)/(b.y-a.y)+a.x)hit=!hit}return hit}
 function partHit(q:Point):'move'|'rotate'|'outside'{const poly=dragPolygon(),radius=(isTouch?30:18)/cam.zoom;if(inside(q,poly))return'move';return poly.some(v=>d2(v,q)<=radius*radius)?'rotate':'outside'}
