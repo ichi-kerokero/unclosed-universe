@@ -8,7 +8,7 @@ export type ActivePiece={id:string;sequence:number;pose:PiecePose;texture:PieceT
 export function pieceId(worldSeed:string,sequence:number){return`piece-v1/${sequence}/${seedHash(`${worldSeed}/${sequence}`).toString(16).padStart(8,'0')}`}
 export function pieceTexture(worldSeed:string,sequence:number):PieceTextureSpec{
  const seed=seedHash(`${worldSeed}/math-piece-v1`);
- return{u:hashUnit(seed,1,sequence,0),v:hashUnit(seed,2,sequence,0),scale:.34+hashUnit(seed,3,sequence,0)*.3};
+ return{u:hashUnit(seed,1,sequence,0),v:hashUnit(seed,2,sequence,0),scale:.14+hashUnit(seed,3,sequence,0)*.11};
 }
 
 export function localHat(base:Hat){return base.polygon.map(v=>({x:v.x-base.center.x,y:v.y-base.center.y}))}
