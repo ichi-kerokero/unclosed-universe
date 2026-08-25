@@ -22,7 +22,7 @@ let cosmos:CosmosRenderer|undefined,worldSeed=WORLD_SEED,opened=new Set<string>(
 let drag:PiecePose|undefined,activePiece:ActivePiece|undefined,nextPieceSequence=1,pendingSpawnAt:number|null=null;
 let mode:'move'|'rotate'='move',active=false,isTouch=false,pointerStart:Point={x:0,y:0},pointer:Point={x:0,y:0},panning=false,last=pointer;
 let hintElapsed=0,hintTick=0,hint:Hat|undefined,snap:Hat|undefined,dirtySave=0,spawnTimer=0,lastTouchTap=0,raf=0;
-let openingStartedAt=0,openingRunning=false,hasCompletedInitialOpening=false,modalOpen=false;
+let openingStartedAt=0,openingRunning=false,openingPiece:ActivePiece|undefined,hasCompletedInitialOpening=false,modalOpen=false;
 const settling=new Map<string,{piece:ActivePiece;start:number}>();
 
 const invalidate=()=>{if(!raf)raf=requestAnimationFrame(draw)};
@@ -50,8 +50,9 @@ function spawnPosition(){return world({x:Math.max(120,canvas.clientWidth*.78),y:
 function spawnHat(playSound=false){if(activePiece)return;const q=spawnPosition(),sequence=nextPieceSequence++,pose:PiecePose={x:q.x,y:q.y,angle:0,mirrored:false};activePiece={id:pieceId(worldSeed,sequence),sequence,pose,texture:pieceTexture(worldSeed,sequence)};drag=activePiece.pose;pendingSpawnAt=null;mode='move';active=false;hintElapsed=0;hint=undefined;snap=undefined;if(playSound)audio.appears();persist();invalidate()}
 function armSpawn(){clearTimeout(spawnTimer);if(activePiece||pendingSpawnAt===null||openingRunning)return;const delay=Math.max(0,pendingSpawnAt-Date.now());spawnTimer=window.setTimeout(()=>spawnHat(true),delay)}
 function resetInitialGameState(){const id=engine.initialId();opened=new Set([id]);undo=[];cam={x:engine.hats.get(id)!.center.x,y:engine.hats.get(id)!.center.y,zoom:42};activePiece=undefined;drag=undefined;nextPieceSequence=1;pendingSpawnAt=null;hintElapsed=0;hintTick=0;hint=undefined;snap=undefined;settling.clear();clearTimeout(spawnTimer)}
-function beginOpening(){resetInitialGameState();spawnHat(false);hasCompletedInitialOpening=false;openingStartedAt=performance.now();openingRunning=true;modalOpen=false;resetOverlay.hidden=true;active=false;panning=false;canvas.classList.remove('dragging');void audio.start(true);persist();invalidate()}
-function completeOpening(){if(hasCompletedInitialOpening)return;hasCompletedInitialOpening=true;clearTimeout(dirtySave);void save(snapshot())}
+function makeOpeningPiece(){const q=spawnPosition(),sequence=activePiece?.sequence??nextPieceSequence;return{id:activePiece?.id??pieceId(worldSeed,sequence),sequence,pose:{x:q.x,y:q.y,angle:0,mirrored:false},texture:activePiece?.texture??pieceTexture(worldSeed,sequence)}}
+function beginOpening(resetGame=false){if(resetGame){resetInitialGameState();spawnHat(false)}else{clearTimeout(spawnTimer);active=false;panning=false;hintElapsed=0;hintTick=0;hint=undefined;snap=undefined}openingPiece=makeOpeningPiece();hasCompletedInitialOpening=false;openingStartedAt=performance.now();openingRunning=true;modalOpen=false;resetOverlay.hidden=true;canvas.classList.remove('dragging');void audio.start(true);persist();invalidate()}
+function completeOpening(){if(hasCompletedInitialOpening)return;hasCompletedInitialOpening=true;if(!activePiece&&pendingSpawnAt!==null&&pendingSpawnAt<=Date.now())spawnHat(false);clearTimeout(dirtySave);void save(snapshot())}
 function keepActiveVisible(){if(!activePiece)return false;const sx=(activePiece.pose.x-cam.x)*cam.zoom+canvas.clientWidth/2,sy=(activePiece.pose.y-cam.y)*cam.zoom+canvas.clientHeight/2,margin=60;if(sx>=margin&&sx<=canvas.clientWidth-margin&&sy>=margin&&sy<=canvas.clientHeight-margin)return false;const q=spawnPosition();activePiece.pose.x=q.x;activePiece.pose.y=q.y;snap=undefined;hint=undefined;return true}
 function resize(){const d=Math.min(2,devicePixelRatio||1),rect=canvas.getBoundingClientRect();canvas.width=Math.round(rect.width*d);canvas.height=Math.round(rect.height*d);if(keepActiveVisible())persist();invalidate()}
 
@@ -74,7 +75,7 @@ function updateOpeningUi(frame:OpeningFrame|undefined){
 function draw(){
  raf=0;const d=Math.min(2,devicePixelRatio||1),W=canvas.width/d,H=canvas.height/d,now=performance.now(),opening=currentOpeningFrame(),bounds=visibleBounds(),visibleOpened=[...opened].map(id=>engine.hats.get(id)).filter((h):h is Hat=>!!h&&visibleHat(h,bounds));
  if(opening?.playReady)completeOpening();
- if(openingRunning&&now-openingStartedAt>=TITLE_VISIBLE_AT)openingRunning=false;
+ if(openingRunning&&now-openingStartedAt>=TITLE_VISIBLE_AT){openingRunning=false;openingPiece=undefined;armSpawn()}
  updateOpeningUi(opening);
  ctx.setTransform(d,0,0,d,0,0);ctx.clearRect(0,0,W,H);paper.draw(ctx,W,H,cam);
  if(opening?.paperVeil){ctx.fillStyle=`rgba(255,253,247,${opening.paperVeil})`;ctx.fillRect(0,0,W,H)}
@@ -86,7 +87,7 @@ function draw(){
  ctx.globalAlpha=universeAlpha;ctx.lineWidth=1/cam.zoom;ctx.strokeStyle='rgba(208,225,232,.38)';for(const h of visibleOpened)ctx.stroke(path(h.polygon));ctx.globalAlpha=1;
  if(hint){ctx.save();ctx.setLineDash([.14,.12]);ctx.lineWidth=3/cam.zoom;ctx.strokeStyle=drag?.mirrored===desiredPose(hint).mirrored?'#c6e8ff':'#d89043';ctx.fillStyle='rgba(184,223,255,.08)';ctx.fill(path(hint.polygon));ctx.stroke(path(hint.polygon));ctx.restore()}
  if(snap){ctx.lineWidth=3/cam.zoom;ctx.strokeStyle='#f4f0df';ctx.stroke(path(snap.polygon))}
- if(activePiece)drawMathPiece(ctx,engine.hats.get(engine.initialId())!,activePiece,mathTexture,cam.zoom,{alpha:opening?.floatingHatOpacity??1,shadow:opening?.floatingHatOpacity??1});ctx.restore();
+ const displayedPiece=opening&&!opening.playReady?openingPiece:activePiece;if(displayedPiece)drawMathPiece(ctx,engine.hats.get(engine.initialId())!,displayedPiece,mathTexture,cam.zoom,{alpha:opening&&!opening.playReady?opening.floatingHatOpacity:1,shadow:opening&&!opening.playReady?opening.floatingHatOpacity:1});ctx.restore();
  if(hint&&drag&&drag.mirrored!==desiredPose(hint).mirrored)message.textContent='ゴーストは正しい鏡像です — ダブルクリック／ダブルタップで反転';else if(activePiece)message.textContent='正しいHatへ近づけると吸着します';else message.textContent='次のHatを待っています';
  hatCount.textContent=`Hat ${opened.size}枚`;undoBtn.disabled=!undo.length;
  if(openingRunning||active||settling.size)invalidate();
@@ -105,7 +106,7 @@ function closeResetDialog(){modalOpen=false;resetOverlay.hidden=true;controls.st
 undoBtn.onclick=()=>{if(!inputEnabled())return;const id=undo.pop();if(id){opened.delete(id);settling.delete(id);persist();invalidate()}};
 resetBtn.onclick=showResetDialog;
 resetCancel.onclick=closeResetDialog;
-resetConfirm.onclick=()=>{modalOpen=false;resetOverlay.hidden=true;beginOpening()};
+resetConfirm.onclick=()=>{modalOpen=false;resetOverlay.hidden=true;beginOpening(true)};
 resetOverlay.addEventListener('pointerdown',e=>{if(e.target===resetOverlay)closeResetDialog()});
 soundBtn.onclick=async()=>{await audio.start(true);audio.set(!audio.muted);soundBtn.textContent=audio.muted?'音 ×':'音 ♪';persist()};
 addEventListener('pointerdown',()=>void audio.start(true),{capture:true});
@@ -124,6 +125,6 @@ function restoreActive(id:string,sequence:number,pose:PiecePose){activePiece={id
   hasCompletedInitialOpening=s.schemaVersion===3?s.opening.hasCompletedInitialOpening:true;
  }
  cosmos=new CosmosRenderer(worldSeed,invalidate);resize();
- if(!s||!hasCompletedInitialOpening)beginOpening();
- else{openingRunning=false;if(!opened.size)opened=new Set([engine.initialId()]);if(!activePiece&&pendingSpawnAt===null)pendingSpawnAt=Date.now()+PIECE_DELAY;armSpawn();persist();invalidate()}
+ if(!s)beginOpening(true);
+ else{if(!opened.size)opened=new Set([engine.initialId()]);if(!activePiece&&pendingSpawnAt===null)pendingSpawnAt=Date.now()+PIECE_DELAY;beginOpening(false)}
 })();
