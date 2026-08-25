@@ -9,7 +9,7 @@ describe('AudioEngine',()=>{
 
   audio.set(true,.5);
   expect(bgm.muted).toBe(true);
-  expect(bgm.volume).toBeCloseTo(.12);
+  expect(bgm.volume).toBe(0);
 
   audio.set(false);
   expect(bgm.muted).toBe(false);

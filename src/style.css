@@ -1,1 +1,46 @@
-:root{font-family:"Yu Mincho","Hiragino Mincho ProN",serif;color:#eee;background:#08090d;font-synthesis:none}*{box-sizing:border-box}html,body,#app{margin:0;width:100%;height:100%;overflow:hidden}canvas{display:block;width:100%;height:100%;touch-action:none;cursor:grab}canvas.dragging{cursor:grabbing}#hud{position:fixed;inset:0;pointer-events:none}.title,#hat-count,#message{text-shadow:0 1px 2px rgba(0,0,0,.98),0 2px 8px rgba(0,0,0,.95),0 0 16px rgba(0,0,0,.9)}.title{position:absolute;left:24px;top:18px;font-size:18px;letter-spacing:.22em;opacity:.95}#hat-count{position:absolute;left:24px;top:48px;font-family:system-ui,sans-serif;font-size:13px;letter-spacing:.08em;opacity:.88}.controls{pointer-events:auto;position:absolute;right:18px;top:16px;display:flex;gap:8px}.controls button{color:#eee;background:#1118;border:1px solid #aaa8;border-radius:999px;padding:7px 14px;backdrop-filter:blur(8px);cursor:pointer}.controls button:disabled{opacity:.35}#message{position:absolute;bottom:20px;left:50%;transform:translateX(-50%);font-family:system-ui,sans-serif;font-size:13px;letter-spacing:.04em;opacity:.88;white-space:nowrap}
+:root{font-family:"Yu Mincho","Hiragino Mincho ProN",serif;color:#eee;background:#08090d;font-synthesis:none}
+*{box-sizing:border-box}
+html,body,#app{margin:0;width:100%;height:100%;overflow:hidden}
+button{font:inherit}
+canvas{display:block;width:100%;height:100%;touch-action:none;cursor:grab}
+canvas.dragging{cursor:grabbing}
+
+#opening-credits{position:fixed;z-index:2;left:clamp(24px,8vw,128px);top:50%;width:min(430px,72vw);transform:translateY(-56%);color:#39362f;opacity:0;pointer-events:none;text-shadow:0 1px 1px rgba(255,255,255,.72);will-change:opacity}
+.credit-heading{font-size:clamp(18px,2.3vw,28px);letter-spacing:.075em;margin-bottom:2.2rem}
+.credit-label{font-family:system-ui,sans-serif;font-size:12px;letter-spacing:.1em;opacity:.68;margin-bottom:.7rem}
+.credit-names{font-size:clamp(17px,2vw,23px);line-height:1.52;letter-spacing:.04em}
+.credit-paper{font-family:system-ui,sans-serif;font-size:12px;line-height:1.65;letter-spacing:.035em;opacity:.72;margin-top:2rem}
+.credit-paper cite{font-family:"Yu Mincho","Hiragino Mincho ProN",serif;font-size:14px;font-style:italic}
+
+#hud{position:fixed;z-index:3;inset:0;pointer-events:none}
+.title,#hat-count,#message{text-shadow:0 1px 2px rgba(0,0,0,.98),0 2px 8px rgba(0,0,0,.95),0 0 16px rgba(0,0,0,.9)}
+.title{position:absolute;left:24px;top:18px;display:flex;flex-direction:column;gap:4px;font-size:18px;letter-spacing:.22em;opacity:.95;will-change:opacity}
+.title-en{font-family:system-ui,sans-serif;font-size:9px;font-weight:400;letter-spacing:.12em;opacity:.75}
+#hat-count{position:absolute;left:24px;top:60px;font-family:system-ui,sans-serif;font-size:13px;letter-spacing:.08em;opacity:.88;will-change:opacity}
+.controls{pointer-events:auto;position:absolute;right:18px;top:16px;display:flex;gap:8px;will-change:opacity}
+.controls button{color:#eee;background:#1118;border:1px solid #aaa8;border-radius:999px;padding:7px 14px;backdrop-filter:blur(8px);cursor:pointer}
+.controls button:disabled{opacity:.35}
+#message{position:absolute;bottom:20px;left:50%;transform:translateX(-50%);font-family:system-ui,sans-serif;font-size:13px;letter-spacing:.04em;opacity:.88;white-space:nowrap;will-change:opacity}
+
+#reset-overlay{position:fixed;z-index:10;inset:0;display:grid;place-items:center;padding:24px;background:rgba(4,5,7,.48);backdrop-filter:blur(5px);pointer-events:auto}
+#reset-overlay[hidden]{display:none}
+.reset-dialog{width:min(430px,100%);padding:28px 28px 22px;color:#38342d;background:rgba(226,215,184,.97);border:1px solid rgba(80,68,48,.42);border-radius:12px;box-shadow:0 18px 55px rgba(0,0,0,.45)}
+.reset-dialog h2{margin:0 0 16px;font-size:20px;font-weight:600;letter-spacing:.04em}
+.reset-dialog p{margin:0;font-family:system-ui,sans-serif;font-size:13px;line-height:1.8;color:#504b42}
+.reset-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:26px}
+.reset-actions button{border:1px solid rgba(75,66,50,.42);border-radius:999px;padding:8px 15px;color:#413c33;background:rgba(255,255,255,.42);cursor:pointer}
+#reset-confirm{color:#f4efe3;background:#494238}
+
+@media(max-width:600px){
+ #opening-credits{left:22px;top:42%;width:calc(100vw - 44px);transform:translateY(-50%)}
+ .credit-heading{margin-bottom:1.45rem}
+ .credit-names{line-height:1.42}
+ .credit-paper{margin-top:1.35rem}
+ .title{left:18px;top:16px}
+ #hat-count{left:18px;top:58px}
+ .controls{right:12px;top:12px;gap:5px}
+ .controls button{padding:7px 11px}
+ #message{bottom:16px;max-width:calc(100vw - 28px);overflow:hidden;text-overflow:ellipsis}
+ .reset-actions{flex-direction:column-reverse}
+ .reset-actions button{width:100%}
+}
